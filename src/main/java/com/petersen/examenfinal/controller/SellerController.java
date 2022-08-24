@@ -10,6 +10,7 @@ import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/seller")
+@CrossOrigin("*")
 public class SellerController {
 
     private final SellerService sellerService;

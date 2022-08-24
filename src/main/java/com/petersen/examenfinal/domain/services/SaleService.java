@@ -14,6 +14,7 @@ import com.petersen.examenfinal.domain.services.dto.SellerDTO;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
+import java.util.Date;
 import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
@@ -48,7 +49,7 @@ public class SaleService implements ISaleService {
         }
         Sale newSale = this.saleMapper.mapToEntity(saleDTO);
         newSale.setSeller(seller);
-        newSale.setCommission(calculateCommission(saleDTO));
+        newSale.setDate(new Date());
         for(SaleDetailDTO saleDetailDTO:saleDTO.getSaleDetails()){
             Product product = this.productRepository.findByCode(saleDetailDTO.getProduct().getCode());
             SaleDetail saleDetail = new SaleDetail();
@@ -57,6 +58,7 @@ public class SaleService implements ISaleService {
             saleDetail.setTotal(saleDetailDTO.getProduct().getAmount().multiply(BigDecimal.valueOf(saleDetailDTO.getQuantity())));
             newSale.addDetail(saleDetail);
         }
+        newSale.setCommission(calculateCommission(saleDTO));
         this.saleRepository.save(newSale);
         return saleDTO;
     }
@@ -76,7 +78,12 @@ public class SaleService implements ISaleService {
     public Iterable<SaleDTO> findAll() {
         Iterable<Sale> result = this.saleRepository.findAll();
         return StreamSupport.stream(result.spliterator(), false)
-                .map(sale -> saleMapper.mapToDTO((sale)))
+                .map(sale -> {
+                   SaleDTO saleDTO = saleMapper.mapToDTO((sale));
+                    Double total = saleDTO.getSaleDetails().stream().mapToDouble(dto -> dto.getTotal().doubleValue()).sum();
+                    saleDTO.setTotal(BigDecimal.valueOf(total));
+                    return saleDTO;
+                })
                 .collect(Collectors.toList());
     }
 
@@ -87,7 +94,13 @@ public class SaleService implements ISaleService {
             throw new IllegalArgumentException("El campo id no puede ser nulo");
         }
         Optional<Sale> sale = this.saleRepository.findById(id);
-        return sale.isPresent() ? this.saleMapper.mapToDTO(sale.get()) : null;
+        if (sale.isPresent()) {
+            SaleDTO saleDTO = saleMapper.mapToDTO((sale.get()));
+            Double total = saleDTO.getSaleDetails().stream().mapToDouble(dto -> dto.getTotal().doubleValue()).sum();
+            saleDTO.setTotal(BigDecimal.valueOf(total));
+            return saleDTO;
+        }
+        return null;
     }
 
     @Override

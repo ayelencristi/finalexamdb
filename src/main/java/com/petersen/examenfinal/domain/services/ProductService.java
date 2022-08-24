@@ -1,6 +1,7 @@
 package com.petersen.examenfinal.domain.services;
 
 import com.petersen.examenfinal.domain.entities.Product;
+import com.petersen.examenfinal.domain.enums.Category;
 import com.petersen.examenfinal.domain.mapper.ProductMapper;
 import com.petersen.examenfinal.domain.repositories.ProductRepository;
 import com.petersen.examenfinal.domain.services.dto.ProductDTO;
@@ -25,7 +26,7 @@ public class ProductService implements IProductService {
     @Override
     public ProductDTO create(ProductDTO productDTO) {
         if(productDTO == null){
-            throw new IllegalArgumentException("El producto no puede ser nulo o vacio");
+            throw new IllegalArgumentException("El producto no puede ser nulo");
         }
         if(productDTO.getCode() == null){
             throw new IllegalArgumentException("El campo código no puede ser nulo");
@@ -86,6 +87,17 @@ public class ProductService implements IProductService {
         product.setCategory(productDTO.getCategory());
         this.productRepository.save(product);
         return productDTO;
+    }
+
+    public List<ProductDTO> findByCategory(Category category){
+        if(category == null){
+            throw new IllegalArgumentException("La categoría no puede ser nula");
+        }
+        List<Product> products = this.productRepository.findByCategory(category);
+        return products == null ? null : products
+                .stream()
+                .map(product -> productMapper.mapToDTO(product))
+                .collect(Collectors.toList());
     }
 
 }
